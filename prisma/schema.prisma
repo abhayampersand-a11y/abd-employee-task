@@ -1,0 +1,172 @@
+// TaskFlow — multi-tenant task management.
+// Every tenant-owned row carries `companyId`; every query must filter on it.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum UserStatus {
+  INVITED
+  ACTIVE
+  DISABLED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  industry  String?
+  size      String?
+  phone     String?
+  address   String?
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users   User[]
+  tasks   Task[]
+  invites Invite[]
+}
+
+model User {
+  id String @id @default(cuid())
+
+  // Null only between admin signup and company onboarding.
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  email String @unique
+  // Login handle generated for employees, e.g. "rahul.patel". Admins sign in by email.
+  employeeId   String? @unique
+  passwordHash String
+
+  firstName String
+  lastName  String
+
+  role   Role       @default(EMPLOYEE)
+  status UserStatus @default(ACTIVE)
+
+  mustChangePassword Boolean @default(false)
+  // indigo | violet | emerald | amber | slate — drives the Avatar component.
+  avatarTone         String  @default("indigo")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignedTasks Task[]        @relation("TaskAssignee")
+  createdTasks  Task[]        @relation("TaskCreator")
+  comments      TaskComment[]
+  sessions      Session[]
+  invitesSent   Invite[]      @relation("InviteCreator")
+
+  @@index([companyId])
+  @@index([companyId, status])
+}
+
+model Session {
+  id String @id @default(cuid())
+
+  // SHA-256 of the raw cookie value. The raw token is never persisted.
+  tokenHash String @unique
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Invite {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  email     String
+  firstName String
+  lastName  String
+
+  // SHA-256 of the raw token that appears in the invite URL.
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  acceptedAt DateTime?
+
+  createdById String
+  createdBy   User   @relation("InviteCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+  @@index([companyId, email])
+}
+
+model Task {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String?
+  category    String?
+
+  status   TaskStatus   @default(TODO)
+  priority TaskPriority @default(MEDIUM)
+  dueDate  DateTime?
+
+  // Who has to do the work.
+  assigneeId String
+  assignee   User   @relation("TaskAssignee", fields: [assigneeId], references: [id])
+
+  // Who handed it out. Drives the "Assigned by Me" view.
+  createdById String
+  createdBy   User   @relation("TaskCreator", fields: [createdById], references: [id])
+
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  comments TaskComment[]
+
+  @@index([companyId, status])
+  @@index([companyId, assigneeId])
+  @@index([companyId, createdById])
+  @@index([companyId, dueDate])
+}
+
+model TaskComment {
+  id String @id @default(cuid())
+
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  body      String
+  createdAt DateTime @default(now())
+
+  @@index([taskId])
+}
