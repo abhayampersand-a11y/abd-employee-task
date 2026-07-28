@@ -17,15 +17,25 @@ import { NewTaskButton } from "@/components/tasks/new-task-button";
  *          hamburger for the secondary items (support, sign out).
  * No Teams or Company Settings anywhere — employees can't reach those.
  */
-export function EmployeeShell({ children }: { children: ReactNode }) {
+export function EmployeeShell({
+  children,
+  isAdmin = false,
+}: {
+  children: ReactNode;
+  /** Only admins get the shortcut back to the admin area. */
+  isAdmin?: boolean;
+}) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const sidebar = (onNavigate?: () => void) => (
     <Sidebar
       items={employeeNavItems}
       homeHref="/employee"
-      subtitle="Employee"
-      switchRole={{ href: "/dashboard", label: "View as Admin" }}
+      subtitle={isAdmin ? "Admin · my work" : "Employee"}
+      supportHref="/employee/support"
+      switchRole={
+        isAdmin ? { href: "/dashboard", label: "View as Admin" } : undefined
+      }
       onNavigate={onNavigate}
     />
   );

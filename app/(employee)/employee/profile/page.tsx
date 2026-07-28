@@ -53,7 +53,7 @@ export default function EmployeeProfilePage() {
         <ul className="divide-y divide-line">
           <li>
             <Link
-              href="/support"
+              href="/employee/support"
               className="flex items-center justify-between px-5 py-4 text-sm font-medium text-ink hover:bg-slate-50"
             >
               Help &amp; support

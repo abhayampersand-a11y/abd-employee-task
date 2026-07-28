@@ -48,7 +48,15 @@ export function matchNav(items: NavItem[], pathname: string): NavItem | undefine
     .sort((a, b) => b.href.length - a.href.length)[0];
 }
 
+/** Routes with a heading but no sidebar entry of their own. */
+const extraTitles: Record<string, string> = {
+  "/support": "Support",
+  "/employee/support": "Support",
+};
+
 export function titleForPath(pathname: string): string {
+  if (extraTitles[pathname]) return extraTitles[pathname];
+
   const items = pathname.startsWith("/employee")
     ? employeeNavItems
     : adminNavItems;

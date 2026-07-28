@@ -4,19 +4,12 @@ import { useState } from "react";
 import { cn } from "@/lib/cn";
 import { useDismissable } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { Avatar } from "@/components/ui/avatar";
+import { AssigneePicker } from "@/components/tasks/assignee-picker";
 import { readApiError } from "@/lib/use-api-error";
 import type { TaskPriority } from "@/lib/dto";
 import { useCreateTaskMutation } from "@/store/services/task-api";
-import { useEmployeesQuery } from "@/store/services/employee-api";
 import { useMeQuery } from "@/store/services/auth-api";
-import {
-  CalendarIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  CloseIcon,
-  PlusIcon,
-} from "@/components/icons";
+import { CalendarIcon, CloseIcon, PlusIcon } from "@/components/icons";
 
 const priorities: { value: TaskPriority; label: string; dot: string }[] = [
   { value: "LOW", label: "Low", dot: "bg-emerald-400" },
@@ -43,7 +36,6 @@ export function CreateTaskModal({
   onClose: () => void;
 }) {
   const { data: me } = useMeQuery();
-  const { data: team } = useEmployeesQuery({ status: "ACTIVE", pageSize: 100 });
   const [createTask, { isLoading, error }] = useCreateTaskMutation();
 
   const [title, setTitle] = useState("");
@@ -57,8 +49,6 @@ export function CreateTaskModal({
 
   if (!open) return null;
 
-  const people = team?.items ?? [];
-  const assignee = people.find((person) => person.id === assigneeId);
   const { message, fieldErrors } = readApiError(error);
 
   function reset() {
@@ -199,52 +189,7 @@ export function CreateTaskModal({
 
           <div>
             <span className={capsLabel}>Assign to</span>
-            <select
-              id="task-assignee"
-              value={assigneeId}
-              onChange={(event) => setAssigneeId(event.target.value)}
-              aria-label="Assign to"
-              className="sr-only"
-            >
-              <option value="">Assign to myself</option>
-              {people.map((person) => (
-                <option key={person.id} value={person.id}>
-                  {person.fullName}
-                </option>
-              ))}
-            </select>
-
-            {/* Tapping the row focuses the native picker above. */}
-            <label
-              htmlFor="task-assignee"
-              className={cn(
-                controlBox,
-                "flex cursor-pointer items-center gap-3.5 px-4 py-3.5",
-              )}
-            >
-              {assignee ? (
-                <Avatar
-                  name={assignee.fullName}
-                  tone={assignee.avatarTone}
-                  size="md"
-                />
-              ) : (
-                <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-600 text-[13px] font-semibold text-white">
-                  {me ? `${me.user.firstName[0]}${me.user.lastName[0]}` : "UA"}
-                </span>
-              )}
-
-              <span className="min-w-0 flex-1">
-                <span className="block text-[17px] font-semibold text-ink">
-                  {assignee ? assignee.fullName : "Myself"}
-                </span>
-                <span className="block text-[15px] text-muted">
-                  Select a team member
-                </span>
-              </span>
-
-              <ChevronRightIcon className="h-5 w-5 shrink-0 text-muted" />
-            </label>
+            <AssigneePicker value={assigneeId} onChange={setAssigneeId} />
           </div>
 
           <div>
@@ -275,32 +220,36 @@ export function CreateTaskModal({
           </div>
 
           <div>
-            <span className={capsLabel}>Due date</span>
-            <input
-              type="date"
-              id="task-due"
-              value={dueDate}
-              onChange={(event) => setDueDate(event.target.value)}
-              className="sr-only"
-            />
-            <label
-              htmlFor="task-due"
+            <label htmlFor="task-due" className={capsLabel}>
+              Due date
+            </label>
+            <div
               className={cn(
                 controlBox,
-                "flex cursor-pointer items-center gap-3.5 px-4 py-3.5",
+                "flex items-center gap-3.5 px-4 py-3 focus-within:border-brand-500 focus-within:bg-white",
               )}
             >
-              <CalendarIcon className="h-7 w-7 shrink-0 text-brand-600" />
-              <span className="min-w-0 flex-1">
-                <span className="block text-[17px] font-semibold text-ink">
-                  {dueDate || "Select Date"}
-                </span>
-                <span className="block text-[15px] text-muted">
-                  Leave empty for no deadline
-                </span>
-              </span>
-              <ChevronDownIcon className="h-5 w-5 shrink-0 text-muted" />
-            </label>
+              <CalendarIcon className="h-6 w-6 shrink-0 text-brand-600" />
+              <input
+                type="date"
+                id="task-due"
+                value={dueDate}
+                onChange={(event) => setDueDate(event.target.value)}
+                className="min-w-0 flex-1 bg-transparent py-1 text-[17px] font-medium text-ink focus:outline-none sm:text-[15px]"
+              />
+              {dueDate ? (
+                <button
+                  type="button"
+                  onClick={() => setDueDate("")}
+                  className="shrink-0 text-[13px] font-semibold text-muted hover:text-ink"
+                >
+                  Clear
+                </button>
+              ) : null}
+            </div>
+            <p className="mt-1.5 text-[13px] text-muted">
+              Leave empty for no deadline.
+            </p>
           </div>
 
           <button

@@ -15,14 +15,16 @@ export function Sidebar({
   items,
   homeHref,
   subtitle,
-  /** Demo-only shortcut so both role views can be reviewed from one build. */
+  supportHref = "/support",
+  /** Only passed for admins — employees have no admin area to switch to. */
   switchRole,
   onNavigate,
 }: {
   items: NavItem[];
   homeHref: string;
   subtitle: string;
-  switchRole: { href: string; label: string };
+  supportHref?: string;
+  switchRole?: { href: string; label: string };
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
@@ -74,16 +76,18 @@ export function Sidebar({
       </nav>
 
       <div className="space-y-1 border-t border-line px-4 py-4">
+        {switchRole ? (
+          <Link
+            href={switchRole.href}
+            onClick={onNavigate}
+            className={cn(itemBase, "text-brand-600 hover:bg-brand-50")}
+          >
+            <SwitchRoleIcon className="h-5 w-5 shrink-0" />
+            {switchRole.label}
+          </Link>
+        ) : null}
         <Link
-          href={switchRole.href}
-          onClick={onNavigate}
-          className={cn(itemBase, "text-brand-600 hover:bg-brand-50")}
-        >
-          <SwitchRoleIcon className="h-5 w-5 shrink-0" />
-          {switchRole.label}
-        </Link>
-        <Link
-          href="/support"
+          href={supportHref}
           onClick={onNavigate}
           className={cn(itemBase, "text-muted hover:bg-slate-50 hover:text-ink")}
         >
