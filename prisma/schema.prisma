@@ -78,6 +78,7 @@ model User {
   createdTasks  Task[]        @relation("TaskCreator")
   comments      TaskComment[]
   sessions      Session[]
+  devices       Device[]
   invitesSent   Invite[]      @relation("InviteCreator")
 
   @@index([companyId])
@@ -98,6 +99,25 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+/// One row per app install that has agreed to receive push notifications.
+/// Rows are deleted on logout and whenever Expo reports the token is dead.
+model Device {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Expo push token, e.g. ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]
+  pushToken String @unique
+  /// ios | android
+  platform  String
+
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Invite {

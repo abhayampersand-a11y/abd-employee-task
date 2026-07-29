@@ -1,5 +1,11 @@
-import type { Company, Task, User } from "@/lib/generated/prisma/client";
 import type {
+  Company,
+  Task,
+  TaskComment,
+  User,
+} from "@/lib/generated/prisma/client";
+import type {
+  CommentDto,
   CompanyDto,
   EmployeeDto,
   PersonDto,
@@ -41,6 +47,15 @@ export function toEmployee(
     ...toUser(user),
     taskCount: user._count?.assignedTasks ?? 0,
     joined: user.createdAt.toISOString(),
+  };
+}
+
+export function toComment(comment: TaskComment & { user: User }): CommentDto {
+  return {
+    id: comment.id,
+    body: comment.body,
+    createdAt: comment.createdAt.toISOString(),
+    author: toPerson(comment.user),
   };
 }
 

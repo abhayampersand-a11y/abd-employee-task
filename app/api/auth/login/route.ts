@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createSession, HttpError, verifyPassword } from "@/lib/auth";
+import {
+  createSession,
+  HttpError,
+  isMobileClient,
+  verifyPassword,
+} from "@/lib/auth";
 import { handler } from "@/lib/api";
 import { loginSchema } from "@/lib/validation";
 import { toCompany, toUser } from "@/lib/serialize";
-import type { MeDto } from "@/lib/dto";
+import type { SessionDto } from "@/lib/dto";
 
 export const POST = handler(async (request: Request) => {
   const { identifier, password } = loginSchema.parse(await request.json());
@@ -26,10 +31,11 @@ export const POST = handler(async (request: Request) => {
     throw new HttpError(403, "This account has been disabled");
   }
 
-  await createSession(user.id);
+  const token = await createSession(user.id);
 
-  return NextResponse.json<MeDto>({
+  return NextResponse.json<SessionDto>({
     user: toUser(user),
     company: user.company ? toCompany(user.company) : null,
+    ...((await isMobileClient()) ? { token } : {}),
   });
 });

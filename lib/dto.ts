@@ -41,6 +41,13 @@ export type MeDto = {
   company: CompanyDto | null;
 };
 
+/**
+ * What the sign-in routes return. `token` is present only for native clients
+ * (`X-Client: mobile`) — the browser keeps its httpOnly cookie and must never
+ * be handed a token its own JavaScript can read.
+ */
+export type SessionDto = MeDto & { token?: string };
+
 export type TaskDto = {
   id: string;
   title: string;
@@ -57,9 +64,37 @@ export type TaskDto = {
   can: { edit: boolean; changeStatus: boolean; delete: boolean };
 };
 
+export type CommentDto = {
+  id: string;
+  body: string;
+  createdAt: string;
+  author: PersonDto;
+};
+
+/** What `GET /api/tasks/[id]` returns — the list endpoint never carries comments. */
+export type TaskDetailDto = TaskDto & { comments: CommentDto[] };
+
 export type EmployeeDto = UserDto & {
   taskCount: number;
   joined: string;
+};
+
+/** The invite as its recipient sees it, before they have an account. */
+export type InvitePreviewDto = {
+  companyName: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+};
+
+/** Returned to the admin who created it — `url` is shown once, to be copied. */
+export type InviteDto = {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  expiresAt: string;
+  url: string;
 };
 
 export type Paginated<T> = {

@@ -9,8 +9,8 @@ import {
   canViewTask,
 } from "@/lib/permissions";
 import { updateTaskSchema } from "@/lib/validation";
-import { toTask } from "@/lib/serialize";
-import type { TaskDto } from "@/lib/dto";
+import { toComment, toTask } from "@/lib/serialize";
+import type { TaskDetailDto, TaskDto } from "@/lib/dto";
 import type { SessionUser } from "@/lib/auth";
 
 const include = { assignee: true, createdBy: true } as const;
@@ -41,18 +41,9 @@ export const GET = handler(async (_request: Request, ctx: RouteContext<"/api/tas
     orderBy: { createdAt: "asc" },
   });
 
-  return NextResponse.json({
+  return NextResponse.json<TaskDetailDto>({
     ...toTask(task, user),
-    comments: comments.map((comment) => ({
-      id: comment.id,
-      body: comment.body,
-      createdAt: comment.createdAt.toISOString(),
-      author: {
-        id: comment.user.id,
-        fullName: `${comment.user.firstName} ${comment.user.lastName}`,
-        avatarTone: comment.user.avatarTone,
-      },
-    })),
+    comments: comments.map(toComment),
   });
 });
 

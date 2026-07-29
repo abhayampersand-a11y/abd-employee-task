@@ -1,6 +1,6 @@
 import "server-only";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import { generatePassword, hashToken, newToken } from "@/lib/tokens";
 import { prisma } from "@/lib/prisma";
@@ -73,7 +73,33 @@ export async function generateEmployeeId(
 // Sessions
 // ---------------------------------------------------------------------------
 
-export async function createSession(userId: string): Promise<void> {
+/**
+ * Two transports, one session row.
+ *
+ * The browser gets an httpOnly cookie, which its JS can never read. Native
+ * clients have no dependable cookie jar, so they send the same raw token as a
+ * Bearer header. Either way it hashes to the same `Session.tokenHash`.
+ */
+async function readSessionToken(): Promise<string | null> {
+  const cookie = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (cookie) return cookie;
+
+  const authorization = (await headers()).get("authorization");
+  if (!authorization?.startsWith("Bearer ")) return null;
+
+  return authorization.slice("Bearer ".length).trim() || null;
+}
+
+/** True when the caller asked for a token in the response body — see `createSession`. */
+export async function isMobileClient(): Promise<boolean> {
+  return (await headers()).get("x-client") === "mobile";
+}
+
+/**
+ * Creates the session and sets the cookie. The raw token is returned so mobile
+ * callers can be handed it once; web routes simply ignore the return value.
+ */
+export async function createSession(userId: string): Promise<string> {
   const { raw, hash } = newToken();
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 86_400_000);
 
@@ -87,23 +113,23 @@ export async function createSession(userId: string): Promise<void> {
     path: "/",
     expires: expiresAt,
   });
+
+  return raw;
 }
 
 export async function destroySession(): Promise<void> {
-  const store = await cookies();
-  const raw = store.get(SESSION_COOKIE)?.value;
+  const raw = await readSessionToken();
 
   if (raw) {
     await prisma.session.deleteMany({ where: { tokenHash: hashToken(raw) } });
   }
 
-  store.delete(SESSION_COOKIE);
+  (await cookies()).delete(SESSION_COOKIE);
 }
 
 /** Returns the signed-in user, or null. Expired sessions are cleaned up. */
 export async function getSession(): Promise<SessionUser | null> {
-  const store = await cookies();
-  const raw = store.get(SESSION_COOKIE)?.value;
+  const raw = await readSessionToken();
   if (!raw) return null;
 
   const session = await prisma.session.findUnique({

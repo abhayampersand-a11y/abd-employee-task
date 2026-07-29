@@ -1,10 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { createSession, hashPassword, HttpError } from "@/lib/auth";
+import {
+  createSession,
+  hashPassword,
+  HttpError,
+  isMobileClient,
+} from "@/lib/auth";
 import { handler } from "@/lib/api";
 import { signupSchema } from "@/lib/validation";
 import { toUser } from "@/lib/serialize";
-import type { MeDto } from "@/lib/dto";
+import type { SessionDto } from "@/lib/dto";
 
 /** Creates the admin account. The company is added next, during onboarding. */
 export const POST = handler(async (request: Request) => {
@@ -30,7 +35,14 @@ export const POST = handler(async (request: Request) => {
     },
   });
 
-  await createSession(user.id);
+  const token = await createSession(user.id);
 
-  return NextResponse.json<MeDto>({ user: toUser(user), company: null }, { status: 201 });
+  return NextResponse.json<SessionDto>(
+    {
+      user: toUser(user),
+      company: null,
+      ...((await isMobileClient()) ? { token } : {}),
+    },
+    { status: 201 },
+  );
 });
