@@ -1,9 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { LogoMark } from "@/components/brand/logo";
-import { ButtonLink } from "@/components/ui/button";
-import { PasswordField, PasswordStrength, TextField } from "@/components/ui/field";
-import { ArrowRightIcon } from "@/components/icons";
+import { SignupForm } from "./signup-form";
 
 export const metadata: Metadata = { title: "Create account — TaskFlow" };
 
@@ -21,38 +19,7 @@ export default function SignupPage() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-5">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <TextField label="First name" name="firstName" placeholder="Alex" />
-            <TextField label="Last name" name="lastName" placeholder="Rivera" />
-          </div>
-
-          <TextField
-            label="Work email"
-            type="email"
-            name="email"
-            autoComplete="email"
-            placeholder="name@company.com"
-          />
-
-          <div>
-            <PasswordField
-              label="Password"
-              name="password"
-              autoComplete="new-password"
-              placeholder="Create a secure password"
-            />
-            <PasswordStrength score={0} />
-            <p className="mt-2 text-[13px] text-muted">
-              Use 8 or more characters with letters and numbers.
-            </p>
-          </div>
-
-          <ButtonLink href="/onboarding/company" size="lg" fullWidth>
-            Create account
-            <ArrowRightIcon className="h-[18px] w-[18px]" />
-          </ButtonLink>
-        </form>
+        <SignupForm />
 
         <div className="mt-8 border-t border-line pt-6 text-center text-sm text-muted">
           Already have an account?{" "}

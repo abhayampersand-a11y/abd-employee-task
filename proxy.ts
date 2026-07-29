@@ -19,6 +19,8 @@ const PROTECTED_PREFIXES = [
   "/reports",
   "/settings",
   "/employee",
+  // Reached only with a session, right after signup.
+  "/onboarding",
 ];
 
 const AUTH_ONLY_PATHS = ["/login", "/signup"];
